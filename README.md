@@ -1,1 +1,1 @@
-A sample command-line application providing basic argument parsing with an entrypoint in `bin/`.
+A repository to solve some [advent of code](https://adventofcode.com/2025) 2025 puzzles in [dart](https://dart.dev).
