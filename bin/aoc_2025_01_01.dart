@@ -72,27 +72,30 @@ int findZeroOccurences(List<Rotation> rotations) {
   for (Rotation currentRotation in rotations) {
     //    print("Current Position = ${currentPosition.toJson()}");
     //    print("Current Rotation = ${currentRotation.toJson()}");
-    currentPosition = rotate(currentPosition, currentRotation);
-    if (currentPosition.number == 0) {
-      timesZeroMet++;
-    }
+    var result = rotate(currentPosition, currentRotation);
+    currentPosition = result.position;
+    timesZeroMet += result.zerosMet;
     //    print("New Position = ${currentPosition.toJson()}");
   }
   return timesZeroMet;
 }
 
-RotationWheelPosition rotate(
+RotationResult rotate(
   RotationWheelPosition currentPosition,
   Rotation currentRotation,
 ) {
+  int zerosMet = 0;
   for (int i = 0; i < currentRotation.distance; i++) {
     if (currentRotation.direction == Direction.right) {
       currentPosition = currentPosition.right!;
     } else {
       currentPosition = currentPosition.left!;
     }
+    if (currentPosition.number == 0) {
+      zerosMet++;
+    }
   }
-  return currentPosition;
+  return RotationResult(zerosMet, currentPosition);
 }
 
 enum Direction { left, right }
@@ -136,6 +139,12 @@ List<RotationWheelPosition> createRotationWheel() {
   rotationWheel[99].left = rotationWheel[98];
 
   return rotationWheel;
+}
+
+class RotationResult {
+  int zerosMet;
+  RotationWheelPosition position;
+  RotationResult(this.zerosMet, this.position);
 }
 
 class RotationWheelPosition {
