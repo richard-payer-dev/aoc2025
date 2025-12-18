@@ -47,7 +47,7 @@ void main(List<String> arguments) {
     print('Positional arguments: ${results.rest}');
 
     var banks = mapToBanks(results.rest);
-    var highJoltage = calculateMaxJoltageForBanks(banks);
+    var highJoltage = calculateMaxJoltageForBanks(banks, 2);
     print("joltage: $highJoltage");
 
     if (verbose) {
@@ -61,7 +61,7 @@ void main(List<String> arguments) {
   }
 }
 
-int calculateMaxJoltageForBanks(List<Bank> banks) {
+int calculateMaxJoltageForBanks(List<Bank> banks, int bankSize) {
   List<ActivatedBatteries> acivatedBatteries = [];
 
   for (Bank currentBank in banks) {
@@ -79,14 +79,15 @@ int calculateMaxJoltageForBanks(List<Bank> banks) {
       return b1.position.compareTo(b2.position);
     });
 
-    print(
-      "currentBankOrdered: ${currentBank.batteries.map((b) => b.toJson()).join("")}",
-    );
+
+//    print(
+//      "currentBankOrdered: ${currentBank.batteries.map((b) => b.toJson()).join("")}",
+//    );
 
     // if the highest voltage is the last position, activate the second biggest battery
-    var activatedBatteries = findActivations(currentBank);
+    var activatedBatteries = findActivations(currentBank, bankSize);
     print(
-      "activatedBatteries: ${activatedBatteries.first.toJson()}, ${activatedBatteries.second.toJson()}, value: ${activatedBatteries.getBankValue()}",
+      "activatedBatteries: ${activatedBatteries.activatedBatteries}, value: ${activatedBatteries.getBankValue()}",
     );
     acivatedBatteries.add(activatedBatteries);
   }
@@ -98,26 +99,55 @@ int calculateMaxJoltageForBanks(List<Bank> banks) {
   return sum;
 }
 
-ActivatedBatteries findActivations(Bank currentBank) {
-  if (currentBank.batteries[0].position >= currentBank.batteries.length) {
-    return ActivatedBatteries(
-      currentBank.batteries[1],
-      currentBank.batteries[0],
-    );
-  }
+ActivatedBatteries findActivations(
+  Bank orderedBankByJoltage, [
+  int bankSize = 2,
+]) {
+  ActivatedBatteries activatedBatteries = ActivatedBatteries();
+  var latestPosition = 0;
 
-  // activate the battery with the highest voltage
-  Battery highestBattery = currentBank.batteries[0];
-  // now get the 2nd highest joltage battery with position greater than highestBank.position
-  for (int i = 1; i < currentBank.batteries.length; i++) {
-    if (currentBank.batteries[i].position > highestBattery.position) {
-      var secondHighestBattery = currentBank.batteries[i];
-      print("second high battery: ${secondHighestBattery.toJson()}");
-      return ActivatedBatteries(highestBattery, secondHighestBattery);
+  for (
+    int currentlySearchedPosition = 1;
+    currentlySearchedPosition <= bankSize;
+    currentlySearchedPosition++
+  ) {
+    // wie viele müssen dahinter noch sein
+    var openBatteryPositionsNeeded = bankSize - currentlySearchedPosition;
+    /*
+    print("######################################################");
+    print("currently Searched Position $currentlySearchedPosition");
+    print("openBatteryPositionsNeeded $openBatteryPositionsNeeded");
+    print("latestPosition $latestPosition");
+*/
+    for (Battery currentBattery in orderedBankByJoltage.batteries) {
+      /*
+      print(
+        "currentBattery checked for activation: ${currentBattery.toJson()}",
+      );
+      print(
+        "orderedBankByJoltage.batteries.length (${orderedBankByJoltage.batteries.length}) - currentBattery.position (${currentBattery.position})) >= openBatteryPositionsNeeded ($openBatteryPositionsNeeded): ${(orderedBankByJoltage.batteries.length - currentBattery.position) >= openBatteryPositionsNeeded}",
+      );
+      print(
+        "currentBattery.position (${currentBattery.position}) > latestPosition($latestPosition) (${currentBattery.position > latestPosition})",
+      );
+      print(
+        "not already contains: ${(!activatedBatteries.activatedBatteries.contains(currentBattery))}",
+      );
+*/
+      if (((orderedBankByJoltage.batteries.length - currentBattery.position) >=
+              openBatteryPositionsNeeded) &&
+          currentBattery.position > latestPosition &&
+          (!activatedBatteries.activatedBatteries.contains(currentBattery))) {
+        // activate the battery with the highest voltage
+        activatedBatteries.activatedBatteries.add(currentBattery);
+        latestPosition = currentBattery.position;
+        //        print("Battery fits! take this one: ${currentBattery.toJson()}");
+        break;
+      }
     }
   }
 
-  throw Exception("kaputt");
+  return activatedBatteries;
 }
 
 List<Bank> mapToBanks(List<String> inputArgs) {
@@ -150,12 +180,16 @@ class Bank {
 }
 
 class ActivatedBatteries {
-  Battery first;
-  Battery second;
+  List<Battery> activatedBatteries = [];
 
   int getBankValue() {
-    return first.joltage * 10 + second.joltage;
-  }
+    var multiplicator = 1;
+    var bankValue = 0;
+    for (Battery currentBattery in activatedBatteries.reversed) {
+      bankValue += currentBattery.joltage * multiplicator;
+      multiplicator *= 10;
+    }
 
-  ActivatedBatteries(this.first, this.second);
+    return bankValue;
+  }
 }
