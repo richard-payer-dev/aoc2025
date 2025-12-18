@@ -47,7 +47,7 @@ void main(List<String> arguments) {
     print('Positional arguments: ${results.rest}');
 
     var banks = mapToBanks(results.rest);
-    var highJoltage = calculateMaxJoltageForBanks(banks, 2);
+    var highJoltage = calculateMaxJoltageForBanks(banks, 12);
     print("joltage: $highJoltage");
 
     if (verbose) {
@@ -79,10 +79,9 @@ int calculateMaxJoltageForBanks(List<Bank> banks, int bankSize) {
       return b1.position.compareTo(b2.position);
     });
 
-
-//    print(
-//      "currentBankOrdered: ${currentBank.batteries.map((b) => b.toJson()).join("")}",
-//    );
+    //    print(
+    //      "currentBankOrdered: ${currentBank.batteries.map((b) => b.toJson()).join("")}",
+    //    );
 
     // if the highest voltage is the last position, activate the second biggest battery
     var activatedBatteries = findActivations(currentBank, bankSize);
