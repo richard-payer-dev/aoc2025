@@ -55,9 +55,23 @@ void main(List<String> arguments) {
       print(currentRow);
     }
 
-    var rollsOfPaperThatCanBeLifted = findRollsThatCanBeLifted(grid);
+    var countOfRollsOfPaperThatCanBeLifted = 0;
+    List<Position> rollsOfPaperThatCanBeLifted = [];
+    do {
+      rollsOfPaperThatCanBeLifted = findRollsThatCanBeLifted(grid);
+      countOfRollsOfPaperThatCanBeLifted += rollsOfPaperThatCanBeLifted.length;
+      print(
+        "total rolls that can be lifted in current step: ${rollsOfPaperThatCanBeLifted.length}",
+      );
 
-    print("rolls that can be lifted: $rollsOfPaperThatCanBeLifted");
+      for (Position toRemove in rollsOfPaperThatCanBeLifted) {
+        grid.positions[toRemove.x][toRemove.y].isNotEmpty = false;
+      }
+    } while (rollsOfPaperThatCanBeLifted.isNotEmpty);
+
+    print(
+      "total rolls that can be lifted: $countOfRollsOfPaperThatCanBeLifted",
+    );
 
     if (verbose) {
       print('[VERBOSE] All arguments: ${results.arguments}');
@@ -70,8 +84,8 @@ void main(List<String> arguments) {
   }
 }
 
-int findRollsThatCanBeLifted(Grid grid) {
-  var rollsCanBeLifted = 0;
+List<Position> findRollsThatCanBeLifted(Grid grid) {
+  List<Position> rollsCanBeLifted = [];
   // step trough grid positions
   for (int i = 0; i < grid.positions.length; i++) {
     for (int j = 0; j < grid.positions[0].length; j++) {
@@ -107,7 +121,7 @@ int findRollsThatCanBeLifted(Grid grid) {
         }
       }
       if (rollsForCurrentPosition < 4) {
-        rollsCanBeLifted++;
+        rollsCanBeLifted.add(grid.positions[i][j]);
       }
     }
   }
