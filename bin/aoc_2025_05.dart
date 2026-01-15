@@ -47,26 +47,13 @@ void main(List<String> arguments) {
     print('Positional arguments: ${results.rest}');
 
     var inventoryManagementSystem = InventoryManagementSystem();
-    var processFreshList = true;
     for (String currentArg in results.rest) {
-      if (currentArg == "+") {
-        processFreshList = false;
-        continue;
-      }
-
-      if (processFreshList) {
-        var freshIngredients = currentArg.split("-");
-        var startingId = int.parse(freshIngredients[0]);
-        var endId = int.parse(freshIngredients[1]);
-        var range = Range(startingId, endId);
-        inventoryManagementSystem.freshIngredients.add(range);
-        print("freshIngredients added:  with id $range");
-      } else {
-        inventoryManagementSystem.availableIngredients.add(
-          Ingredient(int.parse(currentArg)),
-        );
-        print("available Ingredient added with id ${int.parse(currentArg)}");
-      }
+      var freshIngredients = currentArg.split("-");
+      var startingId = int.parse(freshIngredients[0]);
+      var endId = int.parse(freshIngredients[1]);
+      var range = Range(startingId, endId);
+      inventoryManagementSystem.addRange(startingId, endId);
+      print("freshIngredients added:  with id $range");
     }
 
     print(
@@ -85,20 +72,32 @@ void main(List<String> arguments) {
 }
 
 class Range {
-  Ingredient inclusiveMin;
-  Ingredient inclusiveMax;
+  int inclusiveMin;
+  int inclusiveMax;
 
   Range(int min, int max)
-    : inclusiveMin = Ingredient(min < max ? min : max),
-      inclusiveMax = Ingredient(max > min ? max : min);
+    : inclusiveMin = min < max ? min : max,
+      inclusiveMax = max > min ? max : min;
 
-  bool isInRange(Ingredient i) {
-    return i.id >= inclusiveMin.id && i.id <= inclusiveMax.id;
+  bool isInRange(int valueToTest) {
+    return valueToTest >= inclusiveMin && valueToTest <= inclusiveMax;
+  }
+
+  bool isBelowRange(int valueToTest) {
+    return valueToTest < inclusiveMin;
+  }
+
+  bool isAboveRange(int valueToTest) {
+    return valueToTest > inclusiveMax;
+  }
+
+  int count() {
+    return inclusiveMax - inclusiveMin + 1;
   }
 
   @override
   String toString() {
-    return "Range(${inclusiveMin.id}, ${inclusiveMax.id})";
+    return "Range($inclusiveMin, $inclusiveMax)";
   }
 }
 
@@ -116,22 +115,51 @@ class InventoryManagementSystem {
   List<Range> freshIngredients = [];
   List<Ingredient> availableIngredients = [];
 
-  bool isFresh(Ingredient ingredientToCheckForFreshness) {
-    return freshIngredients.any(
-      (freshIngredient) =>
-          freshIngredient.isInRange(ingredientToCheckForFreshness),
-    );
-  }
-
   int countFreshIngredients() {
     var freshIngredientCounter = 0;
-    for (Ingredient currentIngredient in availableIngredients) {
-      if (isFresh(currentIngredient)) {
-        freshIngredientCounter++;
-      }
+    for (Range currenRange in freshIngredients) {
+      freshIngredientCounter += currenRange.count();
     }
     return freshIngredientCounter;
   }
+
+  void addRange(int minUnchecked, int maxUnchecked) {
+    final min = minUnchecked < maxUnchecked ? minUnchecked : maxUnchecked;
+    final max = maxUnchecked > minUnchecked ? maxUnchecked : minUnchecked;
+
+    var newMin = min;
+    var newMax = max;
+    for (Range currentRange in freshIngredients) {
+      if (isInRange(currentRange, newMin, newMax)) {
+        // if current range is already available -> do nothing
+        return;
+      } else if (currentRange.isBelowRange(newMin) &&
+          currentRange.isBelowRange(newMax)) {
+        continue;
+      } else if (currentRange.isAboveRange(newMin) &&
+          currentRange.isAboveRange(newMax)) {
+        continue;
+      } else if (currentRange.isBelowRange(newMin) &&
+          currentRange.isInRange(newMax)) {
+        // min is out of range, but max is in range -> range is from finalMin -> range.min-1
+        newMax = currentRange.inclusiveMin - 1;
+      } else if (currentRange.isInRange(newMin) &&
+          currentRange.isAboveRange(newMax)) {
+        // min is in range, but max is out of range -> range is from range.max+1 - finalMax
+        newMin = currentRange.inclusiveMax + 1;
+      } else if (currentRange.isBelowRange(newMin) &&
+          currentRange.isAboveRange(newMax)) {
+        // min is below range && max is above range -> add to ranges, finalmin - range.min - 1 && range.max + 1 - finalMax
+        addRange(newMin, currentRange.inclusiveMin - 1);
+        addRange(currentRange.inclusiveMax + 1, newMax);
+        return;
+      }
+    }
+    freshIngredients.add(Range(newMin, newMax));
+  }
+
+  bool isInRange(Range currentRange, int min, int max) =>
+      currentRange.isInRange(min) && currentRange.isInRange(max);
 
   @override
   String toString() {
